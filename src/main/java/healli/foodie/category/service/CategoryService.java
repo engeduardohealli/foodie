@@ -4,6 +4,7 @@ import healli.foodie.category.domain.Category;
 import healli.foodie.category.dto.CreateAndUpdateCategoryRequest;
 import healli.foodie.category.dto.UpdateSaleStatusRequest;
 import healli.foodie.category.event.CategoryCreatedEvent;
+import healli.foodie.category.event.CategoryDeletedEvent;
 import healli.foodie.category.event.CategorySaleStatusUpdatedEvent;
 import healli.foodie.category.repository.CategoryRepository;
 import healli.foodie.common.validation.EntityAttributeError;
@@ -74,6 +75,21 @@ public class CategoryService {
                 new CategoryCreatedEvent(category.getId())
         );
         return category;
+    }
+
+
+    public void delete(String id) {
+
+        Optional<Category> optionalCategory = this.categoryRepository.findById(id);
+        if (optionalCategory.isEmpty()) {
+            throw new EntityAttributeNotValidException(
+                    new EntityAttributeError("Category", "id", id, "Invalid category id.")
+            );
+        }
+        this.categoryRepository.delete(optionalCategory.get());
+        this.eventPublisher.publishEvent(
+                new CategoryDeletedEvent(id)
+        );
     }
 
     public Category updateSaleStatus(UpdateSaleStatusRequest request) {

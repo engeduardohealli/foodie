@@ -33,6 +33,19 @@ public class CategoryController {
         return response;
     }
 
+    @DeleteMapping(value = "{id}")
+    @ResponseBody
+    public SuccessfulResponse delete(@PathVariable("id") String id) {
+
+        this.categoryService.delete(id);
+        SuccessfulResponse response = new SuccessfulResponse(
+                LocalDateTime.now(),
+                HttpStatus.OK.value(),
+                "Category deleted successfully."
+        );
+        return response;
+    }
+
     @PatchMapping(value = "{id}/sale-status")
     @ResponseBody
     public SuccessfulResponse updateSaleStatus(@PathVariable("id") String id, @RequestBody UpdateSaleStatusRequest request) {
