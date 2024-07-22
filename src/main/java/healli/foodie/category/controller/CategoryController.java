@@ -1,7 +1,8 @@
 package healli.foodie.category.controller;
 
 import healli.foodie.category.domain.Category;
-import healli.foodie.category.dto.CreateAndUpdateCategoryRequest;
+import healli.foodie.category.dto.CreateRequest;
+import healli.foodie.category.dto.UpdateDetailsRequest;
 import healli.foodie.category.dto.UpdateSaleStatusRequest;
 import healli.foodie.category.service.CategoryService;
 import healli.foodie.common.http.SuccessfulResponse;
@@ -21,7 +22,7 @@ public class CategoryController {
 
     @PostMapping()
     @ResponseBody
-    public SuccessfulResponse create(@RequestBody @Valid CreateAndUpdateCategoryRequest request) {
+    public SuccessfulResponse create(@RequestBody @Valid CreateRequest request) {
 
         Category category = this.categoryService.create(request);
         SuccessfulResponse response = new SuccessfulResponse(
@@ -46,9 +47,24 @@ public class CategoryController {
         return response;
     }
 
+    @PatchMapping(value = "{id}")
+    @ResponseBody
+    public SuccessfulResponse updateDetails(@PathVariable("id") String id, @RequestBody @Valid UpdateDetailsRequest request) {
+
+        request.setId(id);
+        Category category = this.categoryService.updateDetails(request);
+        SuccessfulResponse response = new SuccessfulResponse(
+                LocalDateTime.now(),
+                HttpStatus.OK.value(),
+                "Category updated successfully."
+        );
+        response.setProperty("Data", category);
+        return response;
+    }
+
     @PatchMapping(value = "{id}/sale-status")
     @ResponseBody
-    public SuccessfulResponse updateSaleStatus(@PathVariable("id") String id, @RequestBody UpdateSaleStatusRequest request) {
+    public SuccessfulResponse updateSaleStatus(@PathVariable("id") String id, @RequestBody @Valid UpdateSaleStatusRequest request) {
 
         request.setId(id);
         Category category = this.categoryService.updateSaleStatus(request);

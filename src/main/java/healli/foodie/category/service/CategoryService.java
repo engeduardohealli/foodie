@@ -1,15 +1,18 @@
 package healli.foodie.category.service;
 
 import healli.foodie.category.domain.Category;
-import healli.foodie.category.dto.CreateAndUpdateCategoryRequest;
+import healli.foodie.category.dto.CreateRequest;
+import healli.foodie.category.dto.UpdateDetailsRequest;
 import healli.foodie.category.dto.UpdateSaleStatusRequest;
 import healli.foodie.category.event.CategoryCreatedEvent;
 import healli.foodie.category.event.CategoryDeletedEvent;
+import healli.foodie.category.event.CategoryDetailsUpdatedEvent;
 import healli.foodie.category.event.CategorySaleStatusUpdatedEvent;
 import healli.foodie.category.repository.CategoryRepository;
 import healli.foodie.common.validation.EntityAttributeError;
 import healli.foodie.common.validation.EntityAttributeNotValidException;
 import healli.foodie.owner.model.repository.OwnerRepository;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Example;
@@ -29,7 +32,7 @@ public class CategoryService {
     @Autowired
     private OwnerRepository ownerRepository;
 
-    public Category create(CreateAndUpdateCategoryRequest request) {
+    public Category create(CreateRequest request) {
 
         List<EntityAttributeError> errors = new ArrayList<>();
 
@@ -90,6 +93,65 @@ public class CategoryService {
         this.eventPublisher.publishEvent(
                 new CategoryDeletedEvent(id)
         );
+    }
+
+    public Category updateDetails(UpdateDetailsRequest request) {
+
+        List<EntityAttributeError> errors = new ArrayList<>();
+
+        String id = request.getId();
+        Optional<Category> optionalCategory = this.categoryRepository.findById(id);
+        if (optionalCategory.isEmpty()) {
+            throw new EntityAttributeNotValidException(
+                    new EntityAttributeError(
+                            "Category",
+                            "id",
+                            id,
+                            "Invalid category id."
+                    )
+            );
+        }
+
+        Category category = optionalCategory.get();
+        if (!category.getTitle().equals(request.getTitle())) {
+            if (
+                    this.categoryRepository.exists(
+                            Example.of(
+                                    Category.builder().title(request.getTitle()).build()
+                            )
+                    )
+            ) {
+                errors.add(
+                        new EntityAttributeError(
+                                "Category",
+                                "title",
+                                request.getTitle(),
+                                "Category with the given name already exists."
+                        )
+                );
+            }
+        }
+
+        if (!this.ownerRepository.existsById(request.getOwnerId())) {
+            errors.add(
+                    new EntityAttributeError(
+                            "Category",
+                            "ownerId",
+                            request.getOwnerId(),
+                            "Invalid owner id."
+                    )
+            );
+        }
+
+        if (!errors.isEmpty()) {
+            throw new EntityAttributeNotValidException(errors);
+        }
+
+        BeanUtils.copyProperties(request, category);
+        this.eventPublisher.publishEvent(
+                new CategoryDetailsUpdatedEvent(id)
+        );
+        return this.categoryRepository.save(category);
     }
 
     public Category updateSaleStatus(UpdateSaleStatusRequest request) {
